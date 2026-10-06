@@ -1,0 +1,5 @@
+import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+// Batch static geometry by material inside each selectable zone. Raycasting still
+// resolves to the same zone, but fence wires no longer require individual draws.
+export function optimizeStaticMeshes(groups){for(const group of groups){const buckets=new Map();for(const child of [...group.children]){if(!child.isMesh||child.isInstancedMesh||child.material.transparent)continue;const key=child.material.uuid;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(child);}for(const objects of buckets.values()){if(objects.length<2)continue;const geometries=objects.map(o=>{o.updateMatrix();return o.geometry.clone().applyMatrix4(o.matrix);});const merged=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!merged)continue;const m=new T.Mesh(merged,objects[0].material);m.castShadow=m.receiveShadow=true;objects.forEach(o=>{group.remove(o);o.geometry.dispose();});group.add(m);}}}
